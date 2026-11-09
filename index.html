@@ -219,14 +219,29 @@
   </div>
 
   <script>
-    const firebaseConfig = {
-      apiKey: "DEIN_API_KEY",
-      authDomain: "DEIN_PROJEKT.firebaseapp.com",
-      projectId: "DEIN_PROJEKT",
-      storageBucket: "DEIN_PROJEKT.appspot.com",
-      messagingSenderId: "123456789",
-      appId: "1:123456789:web:abcdef"
-    };
+<script type="module">
+  // Import the functions you need from the SDKs you need
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/13.2.0/firebase-app.js";
+  import { getAnalytics } from "https://www.gstatic.com/firebasejs/13.2.0/firebase-analytics.js";
+  // TODO: Add SDKs for Firebase products that you want to use
+  // https://firebase.google.com/docs/web/setup#available-libraries
+
+  // Your web app's Firebase configuration
+  // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+  const firebaseConfig = {
+    apiKey: "AIzaSyCTVB07-t2HeokS88BFFbc_FZ4y0Z2cKOs",
+    authDomain: "poki-tube.firebaseapp.com",
+    projectId: "poki-tube",
+    storageBucket: "poki-tube.firebasestorage.app",
+    messagingSenderId: "841592861171",
+    appId: "1:841592861171:web:5d6da9e97cf0bf65136286",
+    measurementId: "G-FJFE75X4SR"
+  };
+
+  // Initialize Firebase
+  const app = initializeApp(firebaseConfig);
+  const analytics = getAnalytics(app);
+</script>
 
     let currentUser = null;
     let isRegisterMode = false;
