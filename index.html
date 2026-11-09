@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Poki & YouTube Style Hub (mit Firebase Cloud)</title>
+  <title>Poki & YouTube Style Hub (mit Google & Firebase)</title>
   <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
@@ -32,6 +32,8 @@
     .upload-btn { background-color: var(--accent); color: #000; }
     .upload-btn:hover { background-color: var(--accent-hover); }
     .auth-btn { background-color: rgba(255, 255, 255, 0.15); color: #fff; }
+    .google-btn { background-color: #ffffff; color: #000; display: flex; align-items: center; justify-content: center; gap: 0.5rem; width: 100%; margin-top: 0.8rem; font-weight: 600; }
+    .google-btn:hover { background-color: #f1f5f9; }
     .user-badge { font-size: 0.8rem; color: var(--accent); background: rgba(0, 230, 118, 0.15); padding: 0.3rem 0.6rem; border-radius: 12px; max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .header-bottom { display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; width: 100%; }
     nav { display: flex; background: rgba(255, 255, 255, 0.08); padding: 3px; border-radius: 20px; gap: 2px; flex-shrink: 0; }
@@ -60,14 +62,17 @@
     .short-info { position: absolute; bottom: 1rem; left: 1rem; right: 1rem; z-index: 2; text-shadow: 0 2px 4px rgba(0,0,0,0.8); pointer-events: none; }
     .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.85); display: none; justify-content: center; align-items: center; z-index: 1000; }
     .modal.active { display: flex; }
-    .modal-content { background-color: var(--card-bg); border-radius: 16px; width: 92%; max-width: 900px; max-height: 90vh; display: flex; flex-direction: column; overflow: hidden; position: relative; }
-    .modal-header { padding: 0.8rem 1rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); }
+    .modal-content { background-color: var(--card-bg); border-radius: 16px; width: 92%; max-width: 400px; padding: 1.5rem; display: flex; flex-direction: column; overflow: hidden; position: relative; }
+    .modal-header { padding: 0 0 1rem 0; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); }
     .modal-body { flex: 1; position: relative; background: #000; display: flex; justify-content: center; align-items: center; min-height: 350px; }
-    .modal-body iframe, .modal-body video { width: 100%; height: 450px; border: none; }
     .close-btn, .fullscreen-btn { background: rgba(255, 255, 255, 0.2); border: none; color: #fff; padding: 0.4rem 0.8rem; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 0.85rem; }
-    .form-group { margin-bottom: 0.9rem; }
+    .form-group { margin-top: 0.9rem; margin-bottom: 0.9rem; }
     .form-group label { display: block; margin-bottom: 0.4rem; font-weight: 600; font-size: 0.9rem; }
     .form-group input, .form-group select { width: 100%; padding: 0.65rem; border-radius: 8px; border: 1px solid var(--border-color); background-color: #0f172a; color: #fff; font-size: 0.9rem; }
+    .divider { text-align: center; margin: 1rem 0; color: var(--text-muted); font-size: 0.8rem; position: relative; }
+    .divider::before, .divider::after { content: ""; position: absolute; top: 50%; width: 40%; height: 1px; background: var(--border-color); }
+    .divider::before { left: 0; }
+    .divider::after { right: 0; }
   </style>
 </head>
 <body>
@@ -98,8 +103,8 @@
 
   <main>
     <div class="firebase-setup-banner">
-      <h4>🔐 Echter Account-Schutz & Cloud-Datenbank</h4>
-      <p>Mit Firebase kann sich jeder Nutzer mit <strong>E-Mail & Passwort</strong> registrieren. Hochgeladene Inhalte gehören fest dem Ersteller und <strong>können NUR vom jeweiligen Ersteller gelöscht werden!</strong></p>
+      <h4>🔐 Account-Schutz & Cloud-Datenbank</h4>
+      <p>Melde dich unkompliziert mit Google an. Deine hochgeladenen Inhalte gehören dir und können nur von dir gelöscht werden!</p>
     </div>
 
     <section id="games-tab">
@@ -133,14 +138,24 @@
     </section>
   </main>
 
+  <!-- Login / Registrieren Modal mit Google Option -->
   <div id="auth-modal" class="modal">
-    <div class="modal-content" style="padding: 1.5rem; max-width: 400px;">
-      <div class="modal-header" style="padding: 0 0 1rem 0;">
+    <div class="modal-content">
+      <div class="modal-header">
         <h3 id="auth-title">Anmelden / Registrieren</h3>
         <button class="close-btn" onclick="closeAuthModal()">✕</button>
       </div>
+      
+      <!-- Google Login Button -->
+      <button type="button" class="btn google-btn" onclick="loginWithGoogle()">
+        <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.17z"/><path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.13 0-5.78-2.11-6.73-4.96H1.15v3.14C3.19 21.32 7.27 24 12 24z"/><path fill="#FBBC05" d="M5.27 14.24c-.25-.72-.38-1.5-.38-2.24s.13-1.52.38-2.24V6.62H1.15C.42 8.1 0 9.78 0 12s.42 3.9 1.15 5.38l4.12-3.14z"/><path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.27 0 3.19 2.68 1.15 6.62l4.12 3.14c.95-2.85 3.6-4.96 6.73-4.96z"/></svg>
+        Mit Google fortfahren
+      </button>
+
+      <div class="divider">oder mit E-Mail</div>
+
       <form id="auth-form" onsubmit="handleAuth(event)">
-        <div class="form-group">
+        <div class="form-group" style="margin-top:0;">
           <label>E-Mail-Adresse</label>
           <input type="email" id="auth-email" required placeholder="deine-email@gmx.de">
         </div>
@@ -156,9 +171,10 @@
     </div>
   </div>
 
-  <div id="player-modal" class="modal">
-    <div class="modal-content">
-      <div class="modal-header">
+  <!-- Player Modal -->
+  <div id="player-modal" class="modal" style="max-width:900px; width:92%; height:90vh; background:rgba(0,0,0,0.85);">
+    <div class="modal-content" style="max-width:100%; width:100%; height:100%; padding:0;">
+      <div class="modal-header" style="padding: 0.8rem 1rem;">
         <h3 id="modal-title">Titel</h3>
         <div>
           <button class="fullscreen-btn" onclick="toggleFullscreen()">Vollbild</button>
@@ -169,13 +185,14 @@
     </div>
   </div>
 
+  <!-- Upload Modal -->
   <div id="upload-modal" class="modal">
-    <div class="modal-content" style="padding: 1.2rem;">
-      <div class="modal-header" style="padding: 0 0 0.8rem 0;">
+    <div class="modal-content" style="max-width:450px;">
+      <div class="modal-header">
         <h3>Inhalt veröffentlichen</h3>
         <button class="close-btn" onclick="closeUploadModal()">✕</button>
       </div>
-      <form id="upload-form" onsubmit="handleUpload(event)">
+      <form id="upload-form" onsubmit="handleUpload(event)" style="margin-top: 1rem;">
         <div class="form-group">
           <label>Kategorie</label>
           <select id="upload-type" onchange="toggleThumbnailOption()">
@@ -189,7 +206,7 @@
           <input type="text" id="upload-title" required placeholder="Titel eingeben...">
         </div>
         <div class="form-group">
-          <label>Web-Link / URL (Z.B. GitHub-Link zum Spiel oder MP4-Video)</label>
+          <label>Web-Link / URL (z.B. GitHub-Link zum Spiel oder MP4)</label>
           <input type="url" id="upload-url" required placeholder="https://...">
         </div>
         <div class="form-group" id="thumb-group">
@@ -244,6 +261,17 @@
 
     function openAuthModal() { document.getElementById('auth-modal').classList.add('active'); }
     function closeAuthModal() { document.getElementById('auth-modal').classList.remove('active'); }
+
+    // Google Login Funktion
+    async function loginWithGoogle() {
+      const provider = new firebase.auth.GoogleAuthProvider();
+      try {
+        await firebase.auth().signInWithPopup(provider);
+        closeAuthModal();
+      } catch (err) {
+        alert("Google-Anmeldefehler: " + err.message);
+      }
+    }
 
     function toggleAuthMode() {
       isRegisterMode = !isRegisterMode;
