@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Poki & YouTube Style Hub (mit Firebase Cloud)</title>
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+  <style>
+    :root {
+      --bg-gradient-start: #00b894;
+      --bg-gradient-end: #006b54;
+      --card-bg: #1e293b;
+      --card-hover: #334155;
+      --accent: #00e676;
+      --accent-hover: #00c853;
+      --text-main: #ffffff;
+      --text-muted: #94a3b8;
+      --border-color: #334155;
+      --danger: #ff5252;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+    body { background: linear-gradient(135deg, var(--bg-gradient-start), var(--bg-gradient-end)); color: var(--text-main); min-height: 100vh; display: flex; flex-direction: column; }
+    header { background-color: rgba(15, 23, 42, 0.95); backdrop-filter: blur(10px); padding: 0.6rem 1rem; display: flex; flex-direction: column; position: sticky; top: 0; z-index: 100; border-bottom: 2px solid rgba(255, 255, 255, 0.1); gap: 0.6rem; }
+    .header-top { display: flex; justify-content: space-between; align-items: center; width: 100%; gap: 0.5rem; }
+    .logo { font-size: 1.2rem; font-weight: 800; color: #fff; display: flex; align-items: center; gap: 0.3rem; white-space: nowrap; }
+    .logo span { color: var(--accent); }
+    .header-actions { display: flex; gap: 0.4rem; align-items: center; }
+    .btn { font-weight: 700; border: none; padding: 0.45rem 0.9rem; border-radius: 16px; cursor: pointer; font-size: 0.85rem; transition: background 0.2s ease; white-space: nowrap; }
+    .upload-btn { background-color: var(--accent); color: #000; }
+    .upload-btn:hover { background-color: var(--accent-hover); }
+    .auth-btn { background-color: rgba(255, 255, 255, 0.15); color: #fff; }
+    .user-badge { font-size: 0.8rem; color: var(--accent); background: rgba(0, 230, 118, 0.15); padding: 0.3rem 0.6rem; border-radius: 12px; max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .header-bottom { display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; width: 100%; }
+    nav { display: flex; background: rgba(255, 255, 255, 0.08); padding: 3px; border-radius: 20px; gap: 2px; flex-shrink: 0; }
+    .nav-btn { background: transparent; border: none; color: var(--text-muted); font-size: 0.85rem; font-weight: 600; padding: 0.4rem 0.7rem; border-radius: 16px; cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; gap: 0.3rem; white-space: nowrap; }
+    .nav-btn.active, .nav-btn:hover { color: #fff; background-color: rgba(255, 255, 255, 0.2); }
+    .search-box { display: flex; align-items: center; background: #0f172a; border: 1px solid var(--border-color); border-radius: 16px; padding: 0.35rem 0.6rem; flex: 1; min-width: 120px; }
+    .search-box input { background: transparent; border: none; color: #fff; width: 100%; outline: none; font-size: 0.85rem; padding-left: 0.3rem; }
+    main { flex: 1; padding: 1.5rem; max-width: 1200px; margin: 0 auto; width: 100%; }
+    .section-title { font-size: 1.6rem; margin-bottom: 1.2rem; }
+    .firebase-setup-banner { background: rgba(15, 23, 42, 0.9); border: 2px solid var(--accent); padding: 1rem; border-radius: 12px; margin-bottom: 1.5rem; font-size: 0.85rem; }
+    .firebase-setup-banner h4 { color: var(--accent); margin-bottom: 0.4rem; }
+    .empty-state { text-align: center; padding: 3rem 1.5rem; background: rgba(30, 41, 59, 0.7); border-radius: 16px; border: 2px dashed var(--border-color); margin-top: 1rem; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1.2rem; }
+    .card { background-color: var(--card-bg); border-radius: 12px; overflow: hidden; cursor: pointer; transition: transform 0.2s, background-color 0.2s; border: 1px solid var(--border-color); display: flex; flex-direction: column; position: relative; }
+    .card:hover { transform: translateY(-4px); background-color: var(--card-hover); }
+    .card-thumb { width: 100%; height: 140px; background-color: #0f172a; display: flex; align-items: center; justify-content: center; font-size: 2.2rem; overflow: hidden; position: relative; }
+    .card-thumb img { width: 100%; height: 100%; object-fit: cover; }
+    .card-info { padding: 0.9rem; }
+    .card-title { font-weight: 700; font-size: 1rem; margin-bottom: 0.2rem; }
+    .card-author { color: var(--text-muted); font-size: 0.8rem; }
+    .delete-item-btn { position: absolute; top: 8px; right: 8px; background: rgba(0, 0, 0, 0.75); color: var(--danger); border: 1px solid var(--danger); width: 28px; height: 28px; border-radius: 50%; cursor: pointer; font-size: 0.85rem; display: flex; align-items: center; justify-content: center; z-index: 5; }
+    .delete-item-btn:hover { background: var(--danger); color: #fff; }
+    .shorts-container { display: flex; flex-direction: column; align-items: center; gap: 1.5rem; height: calc(100vh - 150px); overflow-y: auto; scroll-snap-type: y mandatory; }
+    .short-item { scroll-snap-align: center; width: 100%; max-width: 340px; height: 540px; background-color: #000; border-radius: 16px; overflow: hidden; position: relative; box-shadow: 0 8px 20px rgba(0,0,0,0.4); }
+    .short-item video { width: 100%; height: 100%; object-fit: cover; }
+    .short-info { position: absolute; bottom: 1rem; left: 1rem; right: 1rem; z-index: 2; text-shadow: 0 2px 4px rgba(0,0,0,0.8); pointer-events: none; }
+    .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.85); display: none; justify-content: center; align-items: center; z-index: 1000; }
+    .modal.active { display: flex; }
+    .modal-content { background-color: var(--card-bg); border-radius: 16px; width: 92%; max-width: 900px; max-height: 90vh; display: flex; flex-direction: column; overflow: hidden; position: relative; }
+    .modal-header { padding: 0.8rem 1rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); }
+    .modal-body { flex: 1; position: relative; background: #000; display: flex; justify-content: center; align-items: center; min-height: 350px; }
+    .modal-body iframe, .modal-body video { width: 100%; height: 450px; border: none; }
+    .close-btn, .fullscreen-btn { background: rgba(255, 255, 255, 0.2); border: none; color: #fff; padding: 0.4rem 0.8rem; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 0.85rem; }
+    .form-group { margin-bottom: 0.9rem; }
+    .form-group label { display: block; margin-bottom: 0.4rem; font-weight: 600; font-size: 0.9rem; }
+    .form-group input, .form-group select { width: 100%; padding: 0.65rem; border-radius: 8px; border: 1px solid var(--border-color); background-color: #0f172a; color: #fff; font-size: 0.9rem; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="header-top">
+      <div class="logo">🎮 <span>Play&Watch</span></div>
+      <div class="header-actions">
+        <span id="user-badge" class="user-badge" style="display:none;"></span>
+        <button id="auth-btn" class="btn auth-btn" onclick="openAuthModal()">Anmelden</button>
+        <button class="btn upload-btn" onclick="checkAuthAndOpenUpload()">➕ Hochladen</button>
+      </div>
+    </div>
+
+    <div class="header-bottom">
+      <nav>
+        <button class="nav-btn active" onclick="switchTab('games', event)">🎮</button>
+        <button class="nav-btn" onclick="switchTab('videos', event)">📹</button>
+        <button class="nav-btn" onclick="switchTab('shorts', event)">📱</button>
+      </nav>
+
+      <div class="search-box">
+        <span>🔍</span>
+        <input type="text" id="search-input" placeholder="Suchen..." oninput="handleSearch()">
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <div class="firebase-setup-banner">
+      <h4>🔐 Echter Account-Schutz & Cloud-Datenbank</h4>
+      <p>Mit Firebase kann sich jeder Nutzer mit <strong>E-Mail & Passwort</strong> registrieren. Hochgeladene Inhalte gehören fest dem Ersteller und <strong>können NUR vom jeweiligen Ersteller gelöscht werden!</strong></p>
+    </div>
+
+    <section id="games-tab">
+      <h2 class="section-title">HTML5 Spiele</h2>
+      <div id="games-container" class="grid"></div>
+      <div id="games-empty" class="empty-state">
+        <h3>Noch keine Spiele vorhanden!</h3>
+        <p>Melde dich an und lade als Erster ein HTML5-Spiel hoch.</p>
+        <button class="btn upload-btn" onclick="checkAuthAndOpenUpload('game')">Jetzt Spiel hochladen</button>
+      </div>
+    </section>
+
+    <section id="videos-tab" style="display: none;">
+      <h2 class="section-title">Videos</h2>
+      <div id="videos-container" class="grid"></div>
+      <div id="videos-empty" class="empty-state">
+        <h3>Noch keine Videos vorhanden!</h3>
+        <p>Teile dein erstes Video mit der Community.</p>
+        <button class="btn upload-btn" onclick="checkAuthAndOpenUpload('video')">Jetzt Video hochladen</button>
+      </div>
+    </section>
+
+    <section id="shorts-tab" style="display: none;">
+      <h2 class="section-title" style="text-align: center;">Shorts</h2>
+      <div id="shorts-container" class="shorts-container"></div>
+      <div id="shorts-empty" class="empty-state">
+        <h3>Noch keine Shorts hochgeladen!</h3>
+        <p>Lade kurze vertikale Videos hoch.</p>
+        <button class="btn upload-btn" onclick="checkAuthAndOpenUpload('short')">Jetzt Short hochladen</button>
+      </div>
+    </section>
+  </main>
+
+  <div id="auth-modal" class="modal">
+    <div class="modal-content" style="padding: 1.5rem; max-width: 400px;">
+      <div class="modal-header" style="padding: 0 0 1rem 0;">
+        <h3 id="auth-title">Anmelden / Registrieren</h3>
+        <button class="close-btn" onclick="closeAuthModal()">✕</button>
+      </div>
+      <form id="auth-form" onsubmit="handleAuth(event)">
+        <div class="form-group">
+          <label>E-Mail-Adresse</label>
+          <input type="email" id="auth-email" required placeholder="deine-email@gmx.de">
+        </div>
+        <div class="form-group">
+          <label>Passwort</label>
+          <input type="password" id="auth-password" required minlength="6" placeholder="******">
+        </div>
+        <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
+          <button type="submit" id="auth-submit-btn" class="btn upload-btn" style="flex: 1;">Einloggen</button>
+          <button type="button" class="btn auth-btn" onclick="toggleAuthMode()" style="flex: 1;">Konto erstellen</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="player-modal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="modal-title">Titel</h3>
+        <div>
+          <button class="fullscreen-btn" onclick="toggleFullscreen()">Vollbild</button>
+          <button class="close-btn" onclick="closePlayerModal()">✕</button>
+        </div>
+      </div>
+      <div class="modal-body" id="modal-body"></div>
+    </div>
+  </div>
+
+  <div id="upload-modal" class="modal">
+    <div class="modal-content" style="padding: 1.2rem;">
+      <div class="modal-header" style="padding: 0 0 0.8rem 0;">
+        <h3>Inhalt veröffentlichen</h3>
+        <button class="close-btn" onclick="closeUploadModal()">✕</button>
+      </div>
+      <form id="upload-form" onsubmit="handleUpload(event)">
+        <div class="form-group">
+          <label>Kategorie</label>
+          <select id="upload-type" onchange="toggleThumbnailOption()">
+            <option value="game">HTML5 Spiel</option>
+            <option value="video">Normales Video</option>
+            <option value="short">Short Video (Vertikal)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Titel</label>
+          <input type="text" id="upload-title" required placeholder="Titel eingeben...">
+        </div>
+        <div class="form-group">
+          <label>Web-Link / URL (Z.B. GitHub-Link zum Spiel oder MP4-Video)</label>
+          <input type="url" id="upload-url" required placeholder="https://...">
+        </div>
+        <div class="form-group" id="thumb-group">
+          <label>Vorschaubild / Thumbnail URL (Optional)</label>
+          <input type="url" id="upload-thumb" placeholder="https://...">
+        </div>
+        <button type="submit" class="btn upload-btn" style="width: 100%; margin-top: 0.8rem;">Hochladen & Schützen</button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "DEIN_API_KEY",
+      authDomain: "DEIN_PROJEKT.firebaseapp.com",
+      projectId: "DEIN_PROJEKT",
+      storageBucket: "DEIN_PROJEKT.appspot.com",
+      messagingSenderId: "123456789",
+      appId: "1:123456789:web:abcdef"
+    };
+
+    let currentUser = null;
+    let isRegisterMode = false;
+    let itemsStore = [];
+    let searchQuery = "";
+
+    try {
+      firebase.initializeApp(firebaseConfig);
+      firebase.auth().onAuthStateChanged((user) => {
+        currentUser = user;
+        updateUserUI();
+        loadCloudData();
+      });
+    } catch (e) {
+      console.warn("Firebase läuft im Demo-Modus.");
+    }
+
+    function updateUserUI() {
+      const authBtn = document.getElementById('auth-btn');
+      const userBadge = document.getElementById('user-badge');
+      if (currentUser) {
+        userBadge.innerText = currentUser.email;
+        userBadge.style.display = 'inline-block';
+        authBtn.innerText = 'Abmelden';
+        authBtn.onclick = logoutUser;
+      } else {
+        userBadge.style.display = 'none';
+        authBtn.innerText = 'Anmelden';
+        authBtn.onclick = openAuthModal;
+      }
+    }
+
+    function openAuthModal() { document.getElementById('auth-modal').classList.add('active'); }
+    function closeAuthModal() { document.getElementById('auth-modal').classList.remove('active'); }
+
+    function toggleAuthMode() {
+      isRegisterMode = !isRegisterMode;
+      document.getElementById('auth-title').innerText = isRegisterMode ? 'Neues Konto erstellen' : 'Anmelden';
+      document.getElementById('auth-submit-btn').innerText = isRegisterMode ? 'Registrieren' : 'Einloggen';
+    }
+
+    async function handleAuth(e) {
+      e.preventDefault();
+      const email = document.getElementById('auth-email').value;
+      const pass = document.getElementById('auth-password').value;
+      try {
+        if (isRegisterMode) {
+          await firebase.auth().createUserWithEmailAndPassword(email, pass);
+          alert("Account erfolgreich erstellt!");
+        } else {
+          await firebase.auth().signInWithEmailAndPassword(email, pass);
+        }
+        closeAuthModal();
+      } catch (err) {
+        alert("Fehler: " + err.message);
+      }
+    }
+
+    function logoutUser() { firebase.auth().signOut(); }
+
+    function checkAuthAndOpenUpload(type = 'game') {
+      if (!currentUser) {
+        alert("🔒 Bitte zuerst anmelden!");
+        openAuthModal();
+        return;
+      }
+      document.getElementById('upload-type').value = type;
+      toggleThumbnailOption();
+      document.getElementById('upload-modal').classList.add('active');
+    }
+
+    function closeUploadModal() { document.getElementById('upload-modal').classList.remove('active'); }
+    function toggleThumbnailOption() {
+      const type = document.getElementById('upload-type').value;
+      document.getElementById('thumb-group').style.display = (type === 'short') ? 'none' : 'block';
+    }
+
+    async function handleUpload(e) {
+      e.preventDefault();
+      if (!currentUser) return;
+      const type = document.getElementById('upload-type').value;
+      const title = document.getElementById('upload-title').value;
+      const url = document.getElementById('upload-url').value;
+      const thumb = document.getElementById('upload-thumb').value;
+
+      const newItem = {
+        title: title,
+        type: type,
+        url: url,
+        thumb: thumb || null,
+        ownerId: currentUser.uid,
+        ownerEmail: currentUser.email,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      };
+
+      try {
+        await firebase.firestore().collection('community_items').add(newItem);
+        closeUploadModal();
+        document.getElementById('upload-form').reset();
+      } catch (err) {
+        alert("Fehler: " + err.message);
+      }
+    }
+
+    function loadCloudData() {
+      try {
+        firebase.firestore().collection('community_items').orderBy('createdAt', 'desc')
+          .onSnapshot((snapshot) => {
+            itemsStore = [];
+            snapshot.forEach((doc) => { itemsStore.push({ id: doc.id, ...doc.data() }); });
+            renderAll();
+          });
+      } catch (e) { renderAll(); }
+    }
+
+    async function deleteCloudItem(itemId, ownerId, e) {
+      e.stopPropagation();
+      if (!currentUser || currentUser.uid !== ownerId) {
+        alert("⛔ Du kannst nur deine eigenen Inhalte löschen!");
+        return;
+      }
+      if (confirm("Wirklich löschen?")) {
+        await firebase.firestore().collection('community_items').doc(itemId).delete();
+      }
+    }
+
+    function switchTab(tab, evt) {
+      document.querySelectorAll('nav .nav-btn').forEach(btn => btn.classList.remove('active'));
+      document.getElementById('games-tab').style.display = 'none';
+      document.getElementById('videos-tab').style.display = 'none';
+      document.getElementById('shorts-tab').style.display = 'none';
+      if(evt && evt.currentTarget) evt.currentTarget.classList.add('active');
+      document.getElementById(tab + '-tab').style.display = 'block';
+    }
+
+    function handleSearch() {
+      searchQuery = document.getElementById('search-input').value.toLowerCase().trim();
+      renderAll();
+    }
+
+    function renderAll() {
+      const filterItem = item => !searchQuery || item.title.toLowerCase().includes(searchQuery);
+
+      ['games', 'videos', 'shorts'].forEach(typeKey => {
+        const container = document.getElementById(typeKey + '-container');
+        const emptyState = document.getElementById(typeKey + '-empty');
+        container.innerHTML = '';
+        const list = itemsStore.filter(i => (typeKey === 'games' ? i.type === 'game' : typeKey === 'videos' ? i.type === 'video' : i.type === 'short') && filterItem(i));
+
+        if(list.length === 0) {
+          emptyState.style.display = 'block';
+        } else {
+          emptyState.style.display = 'none';
+          list.forEach((item) => {
+            const isOwner = currentUser && currentUser.uid === item.ownerId;
+            const deleteBtnHtml = isOwner ? `<button class="delete-item-btn" onclick="deleteCloudItem('${item.id}', '${item.ownerId}', event)">✕</button>` : '';
+
+            if(typeKey === 'shorts') {
+              const el = document.createElement('div');
+              el.className = 'short-item';
+              el.innerHTML = `${deleteBtnHtml}<video src="${item.url}" controls loop playsinline preload="metadata"></video><div class="short-info"><h3>${escapeHtml(item.title)}</h3><p style="font-size:0.75rem; color:#ccc;">Von ${escapeHtml(item.ownerEmail || 'User')}</p></div>`;
+              container.appendChild(el);
+            } else {
+              const thumbHtml = item.thumb ? `<img src="${item.thumb}" alt="Thumb">` : (typeKey === 'games' ? '🎮' : '📹');
+              container.innerHTML += `<div class="card" onclick="openItem('${item.title}', '${item.url}', '${typeKey === 'games' ? 'iframe' : 'video'}')">${deleteBtnHtml}<div class="card-thumb">${thumbHtml}</div><div class="card-info"><div class="card-title">${escapeHtml(item.title)}</div><div class="card-author">Von ${escapeHtml(item.ownerEmail || 'User')}</div></div></div>`;
+            }
+          });
+        }
+      });
+    }
+
+    function openItem(title, url, tagType) {
+      document.getElementById('modal-title').innerText = title;
+      const modalBody = document.getElementById('modal-body');
+      modalBody.innerHTML = tagType === 'iframe' ? `<iframe id="player-frame" src="${url}" allowfullscreen></iframe>` : `<video id="player-frame" src="${url}" controls autoplay playsinline></video>`;
+      document.getElementById('player-modal').classList.add('active');
+    }
+
+    function closePlayerModal() {
+      document.getElementById('player-modal').classList.remove('active');
+      document.getElementById('modal-body').innerHTML = '';
+    }
+
+    function toggleFullscreen() {
+      const elem = document.getElementById('player-frame');
+      if (elem) {
+        if (elem.requestFullscreen) elem.requestFullscreen();
+        else if (elem.webkitRequestFullscreen) elem.webkitRequestFullscreen();
+      }
+    }
+
+    function escapeHtml(text) {
+      return text ? text.replace(/[&<>"']/g, function(m) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m]; }) : '';
+    }
+
+    renderAll();
+  </script>
+</body>
+</html>
