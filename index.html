@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Poki & YouTube Style Hub (mit Google & Firebase)</title>
-  <!-- Firebase SDKs -->
+  <title>Poki-Tube Hub</title>
+  <!-- Firebase SDKs (Einheitliche Version 9.22.1 für Kompatibilität) -->
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
@@ -39,7 +39,6 @@
     
     .header-bottom { display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; width: 100%; overflow: hidden; }
     
-    /* Nahtloses Horizonales Scrollen für Kategorien ohne sichtbare Trenn-Kästchen */
     nav { 
       display: flex; 
       background: rgba(0, 0, 0, 0.25); 
@@ -69,7 +68,7 @@
       gap: 0.3rem; 
       flex-shrink: 0;
     }
-    .nav-btn.active { color: #fff; background-color: var(--accent); color: #000; font-weight: bold; }
+    .nav-btn.active { color: #000; background-color: var(--accent); font-weight: bold; }
     .nav-btn:hover:not(.active) { color: #fff; background-color: rgba(255, 255, 255, 0.15); }
 
     .search-box { display: flex; align-items: center; background: #0f172a; border: 1px solid var(--border-color); border-radius: 16px; padding: 0.35rem 0.6rem; flex: 1; min-width: 100px; }
@@ -261,10 +260,8 @@
     </div>
   </div>
 
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/13.2.0/firebase-app.js";
-    import { getAnalytics } from "https://www.gstatic.com/firebasejs/13.2.0/firebase-analytics.js";
-
+  <script>
+    // Firebase Konfiguration & Initialisierung (Kompatibilitäts-Modus)
     const firebaseConfig = {
       apiKey: "AIzaSyCTVB07-t2HeokS88BFFbc_FZ4y0Z2cKOs",
       authDomain: "poki-tube.firebaseapp.com",
@@ -275,24 +272,22 @@
       measurementId: "G-FJFE75X4SR"
     };
 
-    const app = initializeApp(firebaseConfig);
-    const analytics = getAnalytics(app);
+    // Firebase starten
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    const auth = firebase.auth();
 
     let currentUser = null;
     let isRegisterMode = false;
     let itemsStore = [];
     let searchQuery = "";
 
-    try {
-      firebase.initializeApp(firebaseConfig);
-      firebase.auth().onAuthStateChanged((user) => {
-        currentUser = user;
-        updateUserUI();
-        loadCloudData();
-      });
-    } catch (e) {
-      console.warn("Firebase läuft im Demo-Modus.");
-    }
+    // Auth Status überwachen
+    auth.onAuthStateChanged((user) => {
+      currentUser = user;
+      updateUserUI();
+      loadCloudData();
+    });
 
     window.updateUserUI = function() {
       const authBtn = document.getElementById('auth-btn');
@@ -315,7 +310,7 @@
     window.loginWithGoogle = async function() {
       const provider = new firebase.auth.GoogleAuthProvider();
       try {
-        await firebase.auth().signInWithPopup(provider);
+        await auth.signInWithPopup(provider);
         closeAuthModal();
       } catch (err) {
         alert("Google-Anmeldefehler: " + err.message);
@@ -334,10 +329,10 @@
       const pass = document.getElementById('auth-password').value;
       try {
         if (isRegisterMode) {
-          await firebase.auth().createUserWithEmailAndPassword(email, pass);
+          await auth.createUserWithEmailAndPassword(email, pass);
           alert("Account erfolgreich erstellt!");
         } else {
-          await firebase.auth().signInWithEmailAndPassword(email, pass);
+          await auth.signInWithEmailAndPassword(email, pass);
         }
         closeAuthModal();
       } catch (err) {
@@ -345,7 +340,7 @@
       }
     };
 
-    window.logoutUser = function() { firebase.auth().signOut(); };
+    window.logoutUser = function() { auth.signOut(); };
 
     window.checkAuthAndOpenUpload = function(type = 'game') {
       if (!currentUser) {
@@ -418,7 +413,7 @@
       };
 
       try {
-        await firebase.firestore().collection('community_items').add(newItem);
+        await db.collection('community_items').add(newItem);
         closeUploadModal();
         document.getElementById('upload-form').reset();
       } catch (err) {
@@ -428,7 +423,7 @@
 
     function loadCloudData() {
       try {
-        firebase.firestore().collection('community_items').orderBy('createdAt', 'desc')
+        db.collection('community_items').orderBy('createdAt', 'desc')
           .onSnapshot((snapshot) => {
             itemsStore = [];
             snapshot.forEach((doc) => { itemsStore.push({ id: doc.id, ...doc.data() }); });
@@ -439,4 +434,85 @@
 
     window.deleteCloudItem = async function(itemId, ownerId, e) {
       e.stopPropagation();
-      if
+      if (!currentUser || currentUser.uid !== ownerId) {
+        alert("⛔ Du kannst nur deine eigenen Inhalte löschen!");
+        return;
+      }
+      if (confirm("Wirklich löschen?")) {
+        await db.collection('community_items').doc(itemId).delete();
+      }
+    };
+
+    window.switchTab = function(tab, evt) {
+      document.querySelectorAll('nav .nav-btn').forEach(btn => btn.classList.remove('active'));
+      document.getElementById('games-tab').style.display = 'none';
+      document.getElementById('videos-tab').style.display = 'none';
+      document.getElementById('shorts-tab').style.display = 'none';
+      if(evt && evt.currentTarget) evt.currentTarget.classList.add('active');
+      document.getElementById(tab + '-tab').style.display = 'block';
+    };
+
+    window.handleSearch = function() {
+      searchQuery = document.getElementById('search-input').value.toLowerCase().trim();
+      renderAll();
+    };
+
+    function renderAll() {
+      const filterItem = item => !searchQuery || item.title.toLowerCase().includes(searchQuery);
+
+      ['games', 'videos', 'shorts'].forEach(typeKey => {
+        const container = document.getElementById(typeKey + '-container');
+        const emptyState = document.getElementById(typeKey + '-empty');
+        container.innerHTML = '';
+        const list = itemsStore.filter(i => (typeKey === 'games' ? i.type === 'game' : typeKey === 'videos' ? i.type === 'video' : i.type === 'short') && filterItem(i));
+
+        if(list.length === 0) {
+          emptyState.style.display = 'block';
+        } else {
+          emptyState.style.display = 'none';
+          list.forEach((item) => {
+            const isOwner = currentUser && currentUser.uid === item.ownerId;
+            const deleteBtnHtml = isOwner ? `<button class="delete-item-btn" onclick="deleteCloudItem('${item.id}', '${item.ownerId}', event)">✕</button>` : '';
+
+            if(typeKey === 'shorts') {
+              const el = document.createElement('div');
+              el.className = 'short-item';
+              el.innerHTML = `${deleteBtnHtml}<video src="${item.url}" controls loop playsinline preload="metadata"></video><div class="short-info"><h3>${escapeHtml(item.title)}</h3><p style="font-size:0.75rem; color:#ccc;">Von ${escapeHtml(item.ownerEmail || 'User')}</p></div>`;
+              container.appendChild(el);
+            } else {
+              const thumbHtml = item.thumb ? `<img src="${item.thumb}" alt="Thumb">` : (typeKey === 'games' ? '🎮' : '📹');
+              container.innerHTML += `<div class="card" onclick="openItem('${item.title}', '${item.url}', '${typeKey === 'games' ? 'iframe' : 'video'}')">${deleteBtnHtml}<div class="card-thumb">${thumbHtml}</div><div class="card-info"><div class="card-title">${escapeHtml(item.title)}</div><div class="card-author">Von ${escapeHtml(item.ownerEmail || 'User')}</div></div></div>`;
+            }
+          });
+        }
+      });
+    }
+
+    window.openItem = function(title, url, tagType) {
+      document.getElementById('modal-title').innerText = title;
+      const modalBody = document.getElementById('modal-body');
+      modalBody.innerHTML = tagType === 'iframe' ? `<iframe id="player-frame" src="${url}" allowfullscreen></iframe>` : `<video id="player-frame" src="${url}" controls autoplay playsinline></video>`;
+      document.getElementById('player-modal').classList.add('active');
+    };
+
+    window.closePlayerModal = function() {
+      document.getElementById('player-modal').classList.remove('active');
+      document.getElementById('modal-body').innerHTML = '';
+    };
+
+    window.toggleFullscreen = function() {
+      const elem = document.getElementById('player-frame');
+      if (elem) {
+        if (elem.requestFullscreen) elem.requestFullscreen();
+        else if (elem.webkitRequestFullscreen) elem.webkitRequestFullscreen();
+      }
+    };
+
+    function escapeHtml(text) {
+      return text ? text.replace(/[&<>"']/g, function(m) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m]; }) : '';
+    }
+
+    renderAll();
+  </script>
+</body>
+</html>
