@@ -139,7 +139,7 @@
   <main>
     <div class="firebase-setup-banner">
       <h4>🔐 Community Hub</h4>
-      <p>Melde dich mit Google an und teile deine eigenen HTML5-Spiele & Videodateien!</p>
+      <p>Melde dich mit Google an und teile deine eigenen Spiele & Videodateien!</p>
     </div>
 
     <section id="games-tab">
@@ -230,7 +230,7 @@
         <div class="form-group">
           <label>Kategorie</label>
           <select id="upload-type" onchange="toggleUploadInputs()">
-            <option value="game">HTML5 Spiel (HTML-Datei)</option>
+            <option value="game">HTML5 Spiel (Datei oder Link)</option>
             <option value="video">Normales Video (Datei)</option>
             <option value="short">Short Video (Datei)</option>
           </select>
@@ -240,10 +240,23 @@
           <input type="text" id="upload-title" required placeholder="Titel eingeben...">
         </div>
         
-        <!-- Datei-Feld für HTML-Spiele -->
+        <!-- Auswahl zwischen Datei-Upload oder Web-URL für Spiele -->
+        <div class="form-group" id="game-source-mode-group">
+          <label>Spiel-Quelle</label>
+          <select id="game-source-mode" onchange="toggleGameSourceInputs()">
+            <option value="file">Lokale .html Datei hochladen</option>
+            <option value="url">Web-Link (URL) eingeben</option>
+          </select>
+        </div>
+
         <div class="form-group" id="game-file-group">
-          <label>HTML-Spieledatei auswählen (.html)</label>
+          <label>HTML-Spieledatei (.html)</label>
           <input type="file" id="upload-game-file" accept=".html,text/html">
+        </div>
+
+        <div class="form-group" id="game-url-group" style="display:none;">
+          <label>Spiel-Link (URL)</label>
+          <input type="url" id="upload-game-url" placeholder="https://...">
         </div>
 
         <!-- Datei-Feld für Videos & Shorts -->
@@ -347,27 +360,51 @@
         openAuthModal();
         return;
       }
+      // Formular bei jedem Öffnen komplett zurücksetzen!
+      document.getElementById('upload-form').reset();
       document.getElementById('upload-type').value = type;
       toggleUploadInputs();
       document.getElementById('upload-modal').classList.add('active');
     };
 
-    window.closeUploadModal = function() { document.getElementById('upload-modal').classList.remove('active'); };
+    window.closeUploadModal = function() { 
+      document.getElementById('upload-modal').classList.remove('active');
+      document.getElementById('upload-form').reset(); // Formular leeren beim Schließen
+    };
     
     window.toggleUploadInputs = function() {
       const type = document.getElementById('upload-type').value;
+      const gameSourceModeGroup = document.getElementById('game-source-mode-group');
       const gameFileGroup = document.getElementById('game-file-group');
+      const gameUrlGroup = document.getElementById('game-url-group');
       const fileGroup = document.getElementById('file-group');
       const thumbGroup = document.getElementById('thumb-group');
 
       if (type === 'game') {
-        gameFileGroup.style.display = 'block';
+        gameSourceModeGroup.style.display = 'block';
         fileGroup.style.display = 'none';
         thumbGroup.style.display = 'block';
+        toggleGameSourceInputs();
       } else {
+        gameSourceModeGroup.style.display = 'none';
         gameFileGroup.style.display = 'none';
+        gameUrlGroup.style.display = 'none';
         fileGroup.style.display = 'block';
         thumbGroup.style.display = 'none';
+      }
+    };
+
+    window.toggleGameSourceInputs = function() {
+      const mode = document.getElementById('game-source-mode').value;
+      const gameFileGroup = document.getElementById('game-file-group');
+      const gameUrlGroup = document.getElementById('game-url-group');
+
+      if (mode === 'file') {
+        gameFileGroup.style.display = 'block';
+        gameUrlGroup.style.display = 'none';
+      } else {
+        gameFileGroup.style.display = 'none';
+        gameUrlGroup.style.display = 'block';
       }
     };
 
@@ -379,17 +416,26 @@
       const thumb = document.getElementById('upload-thumb').value;
 
       if (type === 'game') {
-        const gameFileInput = document.getElementById('upload-game-file');
-        if (gameFileInput.files && gameFileInput.files[0]) {
-          const file = gameFileInput.files[0];
-          const reader = new FileReader();
-          reader.onload = function(uploadEvent) {
-            const url = uploadEvent.target.result; // HTML-Inhalt als Data-URL
-            saveItemToFirestore(title, type, url, thumb || null);
-          };
-          reader.readAsDataURL(file);
+        const mode = document.getElementById('game-source-mode').value;
+        if (mode === 'file') {
+          const gameFileInput = document.getElementById('upload-game-file');
+          if (gameFileInput.files && gameFileInput.files[0]) {
+            const file = gameFileInput.files[0];
+            const reader = new FileReader();
+            reader.onload = function(uploadEvent) {
+              saveItemToFirestore(title, type, uploadEvent.target.result, thumb || null);
+            };
+            reader.readAsDataURL(file);
+          } else {
+            alert("Bitte wähle eine HTML-Spieledatei aus!");
+          }
         } else {
-          alert("Bitte wähle eine HTML-Spieledatei aus!");
+          const url = document.getElementById('upload-game-url').value;
+          if (url) {
+            saveItemToFirestore(title, type, url, thumb || null);
+          } else {
+            alert("Bitte gib einen gültigen Spiel-Link ein!");
+          }
         }
       } else {
         const fileInput = document.getElementById('upload-file');
@@ -397,8 +443,7 @@
           const file = fileInput.files[0];
           const reader = new FileReader();
           reader.onload = function(uploadEvent) {
-            const url = uploadEvent.target.result;
-            saveItemToFirestore(title, type, url, null);
+            saveItemToFirestore(title, type, uploadEvent.target.result, null);
           };
           reader.readAsDataURL(file);
         } else {
@@ -421,8 +466,6 @@
       try {
         await db.collection('community_items').add(newItem);
         closeUploadModal();
-        document.getElementById('upload-form').reset();
-        toggleUploadInputs();
       } catch (err) {
         alert("Fehler beim Speichern: " + err.message);
       }
