@@ -195,30 +195,39 @@
       <form id="upload-form" onsubmit="handleUpload(event)" style="margin-top: 1rem;">
         <div class="form-group">
           <label>Kategorie</label>
-          <select id="upload-type" onchange="toggleThumbnailOption()">
-            <option value="game">HTML5 Spiel</option>
-            <option value="video">Normales Video</option>
-            <option value="short">Short Video (Vertikal)</option>
+          <select id="upload-type" onchange="toggleUploadInputs()">
+            <option value="game">HTML5 Spiel (Web-Link)</option>
+            <option value="video">Normales Video (Datei)</option>
+            <option value="short">Short Video (Datei)</option>
           </select>
         </div>
         <div class="form-group">
           <label>Titel</label>
           <input type="text" id="upload-title" required placeholder="Titel eingeben...">
         </div>
-        <div class="form-group">
-          <label>Web-Link / URL (z.B. GitHub-Link zum Spiel oder MP4)</label>
-          <input type="url" id="upload-url" required placeholder="https://...">
+        
+        <!-- URL-Feld für Spiele -->
+        <div class="form-group" id="url-group">
+          <label>Spiel-Link / URL</label>
+          <input type="url" id="upload-url" placeholder="https://...">
         </div>
+
+        <!-- Datei-Feld für Videos & Shorts -->
+        <div class="form-group" id="file-group" style="display:none;">
+          <label>Videodatei auswählen</label>
+          <input type="file" id="upload-file" accept="video/*">
+        </div>
+
         <div class="form-group" id="thumb-group">
           <label>Vorschaubild / Thumbnail URL (Optional)</label>
           <input type="url" id="upload-thumb" placeholder="https://...">
         </div>
-        <button type="submit" class="btn upload-btn" style="width: 100%; margin-top: 0.8rem;">Hochladen & Schützen</button>
+
+        <button type="submit" class="btn upload-btn" style="width: 100%; margin-top: 0.8rem;">Hochladen & Speichern</button>
       </form>
     </div>
   </div>
 
-  <!-- GESAMTER SCRIPT-BEREICH KORREKT EINGESCHLOSSEN -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/13.2.0/firebase-app.js";
     import { getAnalytics } from "https://www.gstatic.com/firebasejs/13.2.0/firebase-analytics.js";
@@ -312,14 +321,29 @@
         return;
       }
       document.getElementById('upload-type').value = type;
-      toggleThumbnailOption();
+      toggleUploadInputs();
       document.getElementById('upload-modal').classList.add('active');
     };
 
     window.closeUploadModal = function() { document.getElementById('upload-modal').classList.remove('active'); };
-    window.toggleThumbnailOption = function() {
+    
+    window.toggleUploadInputs = function() {
       const type = document.getElementById('upload-type').value;
-      document.getElementById('thumb-group').style.display = (type === 'short') ? 'none' : 'block';
+      const urlGroup = document.getElementById('url-group');
+      const fileGroup = document.getElementById('file-group');
+      const thumbGroup = document.getElementById('thumb-group');
+
+      if (type === 'game') {
+        urlGroup.style.display = 'block';
+        fileGroup.style.display = 'none';
+        thumbGroup.style.display = 'block';
+        document.getElementById('upload-url').required = true;
+      } else {
+        urlGroup.style.display = 'none';
+        fileGroup.style.display = 'block';
+        thumbGroup.style.display = 'none';
+        document.getElementById('upload-url').required = false;
+      }
     };
 
     window.handleUpload = async function(e) {
@@ -327,14 +351,34 @@
       if (!currentUser) return;
       const type = document.getElementById('upload-type').value;
       const title = document.getElementById('upload-title').value;
-      const url = document.getElementById('upload-url').value;
       const thumb = document.getElementById('upload-thumb').value;
+      let url = "";
 
+      if (type === 'game') {
+        url = document.getElementById('upload-url').value;
+        saveItemToFirestore(title, type, url, thumb || null);
+      } else {
+        const fileInput = document.getElementById('upload-file');
+        if (fileInput.files && fileInput.files[0]) {
+          const file = fileInput.files[0];
+          const reader = new FileReader();
+          reader.onload = function(uploadEvent) {
+            url = uploadEvent.target.result; // Wandelt Video in Data-URL um
+            saveItemToFirestore(title, type, url, null);
+          };
+          reader.readAsDataURL(file);
+        } else {
+          alert("Bitte wähle eine Videodatei aus!");
+        }
+      }
+    };
+
+    async function saveItemToFirestore(title, type, url, thumb) {
       const newItem = {
         title: title,
         type: type,
         url: url,
-        thumb: thumb || null,
+        thumb: thumb,
         ownerId: currentUser.uid,
         ownerEmail: currentUser.email,
         createdAt: firebase.firestore.FieldValue.serverTimestamp()
@@ -345,9 +389,9 @@
         closeUploadModal();
         document.getElementById('upload-form').reset();
       } catch (err) {
-        alert("Fehler: " + err.message);
+        alert("Fehler beim Speichern: " + err.message);
       }
-    };
+    }
 
     function loadCloudData() {
       try {
