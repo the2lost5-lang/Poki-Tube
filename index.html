@@ -218,29 +218,23 @@
     </div>
   </div>
 
-<script type="module">
-  // Import the functions you need from the SDKs you need
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/13.2.0/firebase-app.js";
-  import { getAnalytics } from "https://www.gstatic.com/firebasejs/13.2.0/firebase-analytics.js";
-  // TODO: Add SDKs for Firebase products that you want to use
-  // https://firebase.google.com/docs/web/setup#available-libraries
+  <!-- GESAMTER SCRIPT-BEREICH KORREKT EINGESCHLOSSEN -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/13.2.0/firebase-app.js";
+    import { getAnalytics } from "https://www.gstatic.com/firebasejs/13.2.0/firebase-analytics.js";
 
-  // Your web app's Firebase configuration
-  // For Firebase JS SDK v7.20.0 and later, measurementId is optional
-  const firebaseConfig = {
-    apiKey: "AIzaSyCTVB07-t2HeokS88BFFbc_FZ4y0Z2cKOs",
-    authDomain: "poki-tube.firebaseapp.com",
-    projectId: "poki-tube",
-    storageBucket: "poki-tube.firebasestorage.app",
-    messagingSenderId: "841592861171",
-    appId: "1:841592861171:web:5d6da9e97cf0bf65136286",
-    measurementId: "G-FJFE75X4SR"
-  };
+    const firebaseConfig = {
+      apiKey: "AIzaSyCTVB07-t2HeokS88BFFbc_FZ4y0Z2cKOs",
+      authDomain: "poki-tube.firebaseapp.com",
+      projectId: "poki-tube",
+      storageBucket: "poki-tube.firebasestorage.app",
+      messagingSenderId: "841592861171",
+      appId: "1:841592861171:web:5d6da9e97cf0bf65136286",
+      measurementId: "G-FJFE75X4SR"
+    };
 
-  // Initialize Firebase
-  const app = initializeApp(firebaseConfig);
-  const analytics = getAnalytics(app);
-</script>
+    const app = initializeApp(firebaseConfig);
+    const analytics = getAnalytics(app);
 
     let currentUser = null;
     let isRegisterMode = false;
@@ -258,7 +252,7 @@
       console.warn("Firebase läuft im Demo-Modus.");
     }
 
-    function updateUserUI() {
+    window.updateUserUI = function() {
       const authBtn = document.getElementById('auth-btn');
       const userBadge = document.getElementById('user-badge');
       if (currentUser) {
@@ -271,13 +265,12 @@
         authBtn.innerText = 'Anmelden';
         authBtn.onclick = openAuthModal;
       }
-    }
+    };
 
-    function openAuthModal() { document.getElementById('auth-modal').classList.add('active'); }
-    function closeAuthModal() { document.getElementById('auth-modal').classList.remove('active'); }
+    window.openAuthModal = function() { document.getElementById('auth-modal').classList.add('active'); };
+    window.closeAuthModal = function() { document.getElementById('auth-modal').classList.remove('active'); };
 
-    // Google Login Funktion
-    async function loginWithGoogle() {
+    window.loginWithGoogle = async function() {
       const provider = new firebase.auth.GoogleAuthProvider();
       try {
         await firebase.auth().signInWithPopup(provider);
@@ -285,15 +278,15 @@
       } catch (err) {
         alert("Google-Anmeldefehler: " + err.message);
       }
-    }
+    };
 
-    function toggleAuthMode() {
+    window.toggleAuthMode = function() {
       isRegisterMode = !isRegisterMode;
       document.getElementById('auth-title').innerText = isRegisterMode ? 'Neues Konto erstellen' : 'Anmelden';
       document.getElementById('auth-submit-btn').innerText = isRegisterMode ? 'Registrieren' : 'Einloggen';
-    }
+    };
 
-    async function handleAuth(e) {
+    window.handleAuth = async function(e) {
       e.preventDefault();
       const email = document.getElementById('auth-email').value;
       const pass = document.getElementById('auth-password').value;
@@ -308,11 +301,11 @@
       } catch (err) {
         alert("Fehler: " + err.message);
       }
-    }
+    };
 
-    function logoutUser() { firebase.auth().signOut(); }
+    window.logoutUser = function() { firebase.auth().signOut(); };
 
-    function checkAuthAndOpenUpload(type = 'game') {
+    window.checkAuthAndOpenUpload = function(type = 'game') {
       if (!currentUser) {
         alert("🔒 Bitte zuerst anmelden!");
         openAuthModal();
@@ -321,15 +314,15 @@
       document.getElementById('upload-type').value = type;
       toggleThumbnailOption();
       document.getElementById('upload-modal').classList.add('active');
-    }
+    };
 
-    function closeUploadModal() { document.getElementById('upload-modal').classList.remove('active'); }
-    function toggleThumbnailOption() {
+    window.closeUploadModal = function() { document.getElementById('upload-modal').classList.remove('active'); };
+    window.toggleThumbnailOption = function() {
       const type = document.getElementById('upload-type').value;
       document.getElementById('thumb-group').style.display = (type === 'short') ? 'none' : 'block';
-    }
+    };
 
-    async function handleUpload(e) {
+    window.handleUpload = async function(e) {
       e.preventDefault();
       if (!currentUser) return;
       const type = document.getElementById('upload-type').value;
@@ -354,7 +347,7 @@
       } catch (err) {
         alert("Fehler: " + err.message);
       }
-    }
+    };
 
     function loadCloudData() {
       try {
@@ -367,7 +360,7 @@
       } catch (e) { renderAll(); }
     }
 
-    async function deleteCloudItem(itemId, ownerId, e) {
+    window.deleteCloudItem = async function(itemId, ownerId, e) {
       e.stopPropagation();
       if (!currentUser || currentUser.uid !== ownerId) {
         alert("⛔ Du kannst nur deine eigenen Inhalte löschen!");
@@ -376,21 +369,21 @@
       if (confirm("Wirklich löschen?")) {
         await firebase.firestore().collection('community_items').doc(itemId).delete();
       }
-    }
+    };
 
-    function switchTab(tab, evt) {
+    window.switchTab = function(tab, evt) {
       document.querySelectorAll('nav .nav-btn').forEach(btn => btn.classList.remove('active'));
       document.getElementById('games-tab').style.display = 'none';
       document.getElementById('videos-tab').style.display = 'none';
       document.getElementById('shorts-tab').style.display = 'none';
       if(evt && evt.currentTarget) evt.currentTarget.classList.add('active');
       document.getElementById(tab + '-tab').style.display = 'block';
-    }
+    };
 
-    function handleSearch() {
+    window.handleSearch = function() {
       searchQuery = document.getElementById('search-input').value.toLowerCase().trim();
       renderAll();
-    }
+    };
 
     function renderAll() {
       const filterItem = item => !searchQuery || item.title.toLowerCase().includes(searchQuery);
@@ -423,25 +416,25 @@
       });
     }
 
-    function openItem(title, url, tagType) {
+    window.openItem = function(title, url, tagType) {
       document.getElementById('modal-title').innerText = title;
       const modalBody = document.getElementById('modal-body');
       modalBody.innerHTML = tagType === 'iframe' ? `<iframe id="player-frame" src="${url}" allowfullscreen></iframe>` : `<video id="player-frame" src="${url}" controls autoplay playsinline></video>`;
       document.getElementById('player-modal').classList.add('active');
-    }
+    };
 
-    function closePlayerModal() {
+    window.closePlayerModal = function() {
       document.getElementById('player-modal').classList.remove('active');
       document.getElementById('modal-body').innerHTML = '';
-    }
+    };
 
-    function toggleFullscreen() {
+    window.toggleFullscreen = function() {
       const elem = document.getElementById('player-frame');
       if (elem) {
         if (elem.requestFullscreen) elem.requestFullscreen();
         else if (elem.webkitRequestFullscreen) elem.webkitRequestFullscreen();
       }
-    }
+    };
 
     function escapeHtml(text) {
       return text ? text.replace(/[&<>"']/g, function(m) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m]; }) : '';
