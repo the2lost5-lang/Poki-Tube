@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Poki & YouTube Style Hub (mit Google & Firebase)</title>
   <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
@@ -22,7 +22,8 @@
       --danger: #ff5252;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-    body { background: linear-gradient(135deg, var(--bg-gradient-start), var(--bg-gradient-end)); color: var(--text-main); min-height: 100vh; display: flex; flex-direction: column; }
+    body { background: linear-gradient(135deg, var(--bg-gradient-start), var(--bg-gradient-end)); color: var(--text-main); min-height: 100vh; display: flex; flex-direction: column; overflow-x: hidden; }
+    
     header { background-color: rgba(15, 23, 42, 0.95); backdrop-filter: blur(10px); padding: 0.6rem 1rem; display: flex; flex-direction: column; position: sticky; top: 0; z-index: 100; border-bottom: 2px solid rgba(255, 255, 255, 0.1); gap: 0.6rem; }
     .header-top { display: flex; justify-content: space-between; align-items: center; width: 100%; gap: 0.5rem; }
     .logo { font-size: 1.2rem; font-weight: 800; color: #fff; display: flex; align-items: center; gap: 0.3rem; white-space: nowrap; }
@@ -35,42 +36,77 @@
     .google-btn { background-color: #ffffff; color: #000; display: flex; align-items: center; justify-content: center; gap: 0.5rem; width: 100%; margin-top: 0.8rem; font-weight: 600; }
     .google-btn:hover { background-color: #f1f5f9; }
     .user-badge { font-size: 0.8rem; color: var(--accent); background: rgba(0, 230, 118, 0.15); padding: 0.3rem 0.6rem; border-radius: 12px; max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .header-bottom { display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; width: 100%; }
-    nav { display: flex; background: rgba(255, 255, 255, 0.08); padding: 3px; border-radius: 20px; gap: 2px; flex-shrink: 0; }
-    .nav-btn { background: transparent; border: none; color: var(--text-muted); font-size: 0.85rem; font-weight: 600; padding: 0.4rem 0.7rem; border-radius: 16px; cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; gap: 0.3rem; white-space: nowrap; }
-    .nav-btn.active, .nav-btn:hover { color: #fff; background-color: rgba(255, 255, 255, 0.2); }
-    .search-box { display: flex; align-items: center; background: #0f172a; border: 1px solid var(--border-color); border-radius: 16px; padding: 0.35rem 0.6rem; flex: 1; min-width: 120px; }
+    
+    .header-bottom { display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; width: 100%; overflow: hidden; }
+    
+    /* Nahtloses Horizonales Scrollen für Kategorien ohne sichtbare Trenn-Kästchen */
+    nav { 
+      display: flex; 
+      background: rgba(0, 0, 0, 0.25); 
+      padding: 4px; 
+      border-radius: 20px; 
+      gap: 6px; 
+      overflow-x: auto; 
+      white-space: nowrap; 
+      scrollbar-width: none; 
+      -webkit-overflow-scrolling: touch; 
+      max-width: 60%;
+    }
+    nav::-webkit-scrollbar { display: none; }
+    
+    .nav-btn { 
+      background: transparent; 
+      border: none; 
+      color: var(--text-muted); 
+      font-size: 0.85rem; 
+      font-weight: 600; 
+      padding: 0.4rem 0.8rem; 
+      border-radius: 16px; 
+      cursor: pointer; 
+      transition: all 0.2s ease; 
+      display: inline-flex; 
+      align-items: center; 
+      gap: 0.3rem; 
+      flex-shrink: 0;
+    }
+    .nav-btn.active { color: #fff; background-color: var(--accent); color: #000; font-weight: bold; }
+    .nav-btn:hover:not(.active) { color: #fff; background-color: rgba(255, 255, 255, 0.15); }
+
+    .search-box { display: flex; align-items: center; background: #0f172a; border: 1px solid var(--border-color); border-radius: 16px; padding: 0.35rem 0.6rem; flex: 1; min-width: 100px; }
     .search-box input { background: transparent; border: none; color: #fff; width: 100%; outline: none; font-size: 0.85rem; padding-left: 0.3rem; }
-    main { flex: 1; padding: 1.5rem; max-width: 1200px; margin: 0 auto; width: 100%; }
-    .section-title { font-size: 1.6rem; margin-bottom: 1.2rem; }
-    .firebase-setup-banner { background: rgba(15, 23, 42, 0.9); border: 2px solid var(--accent); padding: 1rem; border-radius: 12px; margin-bottom: 1.5rem; font-size: 0.85rem; }
-    .firebase-setup-banner h4 { color: var(--accent); margin-bottom: 0.4rem; }
-    .empty-state { text-align: center; padding: 3rem 1.5rem; background: rgba(30, 41, 59, 0.7); border-radius: 16px; border: 2px dashed var(--border-color); margin-top: 1rem; }
-    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1.2rem; }
+    
+    main { flex: 1; padding: 1rem; max-width: 1200px; margin: 0 auto; width: 100%; }
+    .section-title { font-size: 1.4rem; margin-bottom: 1rem; }
+    .firebase-setup-banner { background: rgba(15, 23, 42, 0.9); border: 2px solid var(--accent); padding: 0.9rem; border-radius: 12px; margin-bottom: 1.2rem; font-size: 0.85rem; }
+    .firebase-setup-banner h4 { color: var(--accent); margin-bottom: 0.3rem; }
+    .empty-state { text-align: center; padding: 2.5rem 1rem; background: rgba(30, 41, 59, 0.7); border-radius: 16px; border: 2px dashed var(--border-color); margin-top: 1rem; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 1rem; }
     .card { background-color: var(--card-bg); border-radius: 12px; overflow: hidden; cursor: pointer; transition: transform 0.2s, background-color 0.2s; border: 1px solid var(--border-color); display: flex; flex-direction: column; position: relative; }
-    .card:hover { transform: translateY(-4px); background-color: var(--card-hover); }
-    .card-thumb { width: 100%; height: 140px; background-color: #0f172a; display: flex; align-items: center; justify-content: center; font-size: 2.2rem; overflow: hidden; position: relative; }
+    .card:hover { transform: translateY(-3px); background-color: var(--card-hover); }
+    .card-thumb { width: 100%; height: 120px; background-color: #0f172a; display: flex; align-items: center; justify-content: center; font-size: 2rem; overflow: hidden; position: relative; }
     .card-thumb img { width: 100%; height: 100%; object-fit: cover; }
-    .card-info { padding: 0.9rem; }
-    .card-title { font-weight: 700; font-size: 1rem; margin-bottom: 0.2rem; }
-    .card-author { color: var(--text-muted); font-size: 0.8rem; }
-    .delete-item-btn { position: absolute; top: 8px; right: 8px; background: rgba(0, 0, 0, 0.75); color: var(--danger); border: 1px solid var(--danger); width: 28px; height: 28px; border-radius: 50%; cursor: pointer; font-size: 0.85rem; display: flex; align-items: center; justify-content: center; z-index: 5; }
+    .card-info { padding: 0.75rem; }
+    .card-title { font-weight: 700; font-size: 0.9rem; margin-bottom: 0.2rem; }
+    .card-author { color: var(--text-muted); font-size: 0.75rem; }
+    .delete-item-btn { position: absolute; top: 6px; right: 6px; background: rgba(0, 0, 0, 0.75); color: var(--danger); border: 1px solid var(--danger); width: 26px; height: 26px; border-radius: 50%; cursor: pointer; font-size: 0.8rem; display: flex; align-items: center; justify-content: center; z-index: 5; }
     .delete-item-btn:hover { background: var(--danger); color: #fff; }
+    
     .shorts-container { display: flex; flex-direction: column; align-items: center; gap: 1.5rem; height: calc(100vh - 150px); overflow-y: auto; scroll-snap-type: y mandatory; }
-    .short-item { scroll-snap-align: center; width: 100%; max-width: 340px; height: 540px; background-color: #000; border-radius: 16px; overflow: hidden; position: relative; box-shadow: 0 8px 20px rgba(0,0,0,0.4); }
+    .short-item { scroll-snap-align: center; width: 100%; max-width: 340px; height: 500px; background-color: #000; border-radius: 16px; overflow: hidden; position: relative; box-shadow: 0 8px 20px rgba(0,0,0,0.4); }
     .short-item video { width: 100%; height: 100%; object-fit: cover; }
     .short-info { position: absolute; bottom: 1rem; left: 1rem; right: 1rem; z-index: 2; text-shadow: 0 2px 4px rgba(0,0,0,0.8); pointer-events: none; }
+    
     .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.85); display: none; justify-content: center; align-items: center; z-index: 1000; }
     .modal.active { display: flex; }
-    .modal-content { background-color: var(--card-bg); border-radius: 16px; width: 92%; max-width: 400px; padding: 1.5rem; display: flex; flex-direction: column; overflow: hidden; position: relative; }
-    .modal-header { padding: 0 0 1rem 0; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); }
-    .modal-body { flex: 1; position: relative; background: #000; display: flex; justify-content: center; align-items: center; min-height: 350px; }
+    .modal-content { background-color: var(--card-bg); border-radius: 16px; width: 92%; max-width: 400px; padding: 1.2rem; display: flex; flex-direction: column; overflow: hidden; position: relative; }
+    .modal-header { padding: 0 0 0.8rem 0; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); }
+    .modal-body { flex: 1; position: relative; background: #000; display: flex; justify-content: center; align-items: center; min-height: 300px; }
     .close-btn, .fullscreen-btn { background: rgba(255, 255, 255, 0.2); border: none; color: #fff; padding: 0.4rem 0.8rem; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 0.85rem; }
-    .form-group { margin-top: 0.9rem; margin-bottom: 0.9rem; }
-    .form-group label { display: block; margin-bottom: 0.4rem; font-weight: 600; font-size: 0.9rem; }
-    .form-group input, .form-group select { width: 100%; padding: 0.65rem; border-radius: 8px; border: 1px solid var(--border-color); background-color: #0f172a; color: #fff; font-size: 0.9rem; }
-    .divider { text-align: center; margin: 1rem 0; color: var(--text-muted); font-size: 0.8rem; position: relative; }
-    .divider::before, .divider::after { content: ""; position: absolute; top: 50%; width: 40%; height: 1px; background: var(--border-color); }
+    .form-group { margin-top: 0.8rem; margin-bottom: 0.8rem; }
+    .form-group label { display: block; margin-bottom: 0.3rem; font-weight: 600; font-size: 0.85rem; }
+    .form-group input, .form-group select { width: 100%; padding: 0.6rem; border-radius: 8px; border: 1px solid var(--border-color); background-color: #0f172a; color: #fff; font-size: 0.85rem; }
+    .divider { text-align: center; margin: 0.8rem 0; color: var(--text-muted); font-size: 0.8rem; position: relative; }
+    .divider::before, .divider::after { content: ""; position: absolute; top: 50%; width: 38%; height: 1px; background: var(--border-color); }
     .divider::before { left: 0; }
     .divider::after { right: 0; }
   </style>
@@ -89,9 +125,9 @@
 
     <div class="header-bottom">
       <nav>
-        <button class="nav-btn active" onclick="switchTab('games', event)">🎮</button>
-        <button class="nav-btn" onclick="switchTab('videos', event)">📹</button>
-        <button class="nav-btn" onclick="switchTab('shorts', event)">📱</button>
+        <button class="nav-btn active" onclick="switchTab('games', event)">🎮 Spiele</button>
+        <button class="nav-btn" onclick="switchTab('videos', event)">📹 Videos</button>
+        <button class="nav-btn" onclick="switchTab('shorts', event)">📱 Shorts</button>
       </nav>
 
       <div class="search-box">
@@ -103,8 +139,8 @@
 
   <main>
     <div class="firebase-setup-banner">
-      <h4>🔐 Account-Schutz & Cloud-Datenbank</h4>
-      <p>Melde dich unkompliziert mit Google an. Deine hochgeladenen Inhalte gehören dir und können nur von dir gelöscht werden!</p>
+      <h4>🔐 Community Hub</h4>
+      <p>Melde dich mit Google an und teile deine eigenen Spiele & Videodateien!</p>
     </div>
 
     <section id="games-tab">
@@ -113,7 +149,7 @@
       <div id="games-empty" class="empty-state">
         <h3>Noch keine Spiele vorhanden!</h3>
         <p>Melde dich an und lade als Erster ein HTML5-Spiel hoch.</p>
-        <button class="btn upload-btn" onclick="checkAuthAndOpenUpload('game')">Jetzt Spiel hochladen</button>
+        <button class="btn upload-btn" style="margin-top:0.8rem;" onclick="checkAuthAndOpenUpload('game')">Jetzt Spiel hochladen</button>
       </div>
     </section>
 
@@ -123,7 +159,7 @@
       <div id="videos-empty" class="empty-state">
         <h3>Noch keine Videos vorhanden!</h3>
         <p>Teile dein erstes Video mit der Community.</p>
-        <button class="btn upload-btn" onclick="checkAuthAndOpenUpload('video')">Jetzt Video hochladen</button>
+        <button class="btn upload-btn" style="margin-top:0.8rem;" onclick="checkAuthAndOpenUpload('video')">Jetzt Video hochladen</button>
       </div>
     </section>
 
@@ -133,12 +169,12 @@
       <div id="shorts-empty" class="empty-state">
         <h3>Noch keine Shorts hochgeladen!</h3>
         <p>Lade kurze vertikale Videos hoch.</p>
-        <button class="btn upload-btn" onclick="checkAuthAndOpenUpload('short')">Jetzt Short hochladen</button>
+        <button class="btn upload-btn" style="margin-top:0.8rem;" onclick="checkAuthAndOpenUpload('short')">Jetzt Short hochladen</button>
       </div>
     </section>
   </main>
 
-  <!-- Login / Registrieren Modal mit Google Option -->
+  <!-- Login Modal -->
   <div id="auth-modal" class="modal">
     <div class="modal-content">
       <div class="modal-header">
@@ -146,7 +182,6 @@
         <button class="close-btn" onclick="closeAuthModal()">✕</button>
       </div>
       
-      <!-- Google Login Button -->
       <button type="button" class="btn google-btn" onclick="loginWithGoogle()">
         <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.17z"/><path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.13 0-5.78-2.11-6.73-4.96H1.15v3.14C3.19 21.32 7.27 24 12 24z"/><path fill="#FBBC05" d="M5.27 14.24c-.25-.72-.38-1.5-.38-2.24s.13-1.52.38-2.24V6.62H1.15C.42 8.1 0 9.78 0 12s.42 3.9 1.15 5.38l4.12-3.14z"/><path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.27 0 3.19 2.68 1.15 6.62l4.12 3.14c.95-2.85 3.6-4.96 6.73-4.96z"/></svg>
         Mit Google fortfahren
@@ -206,13 +241,11 @@
           <input type="text" id="upload-title" required placeholder="Titel eingeben...">
         </div>
         
-        <!-- URL-Feld für Spiele -->
         <div class="form-group" id="url-group">
           <label>Spiel-Link / URL</label>
           <input type="url" id="upload-url" placeholder="https://...">
         </div>
 
-        <!-- Datei-Feld für Videos & Shorts -->
         <div class="form-group" id="file-group" style="display:none;">
           <label>Videodatei auswählen</label>
           <input type="file" id="upload-file" accept="video/*">
@@ -363,7 +396,7 @@
           const file = fileInput.files[0];
           const reader = new FileReader();
           reader.onload = function(uploadEvent) {
-            url = uploadEvent.target.result; // Wandelt Video in Data-URL um
+            url = uploadEvent.target.result;
             saveItemToFirestore(title, type, url, null);
           };
           reader.readAsDataURL(file);
@@ -406,85 +439,4 @@
 
     window.deleteCloudItem = async function(itemId, ownerId, e) {
       e.stopPropagation();
-      if (!currentUser || currentUser.uid !== ownerId) {
-        alert("⛔ Du kannst nur deine eigenen Inhalte löschen!");
-        return;
-      }
-      if (confirm("Wirklich löschen?")) {
-        await firebase.firestore().collection('community_items').doc(itemId).delete();
-      }
-    };
-
-    window.switchTab = function(tab, evt) {
-      document.querySelectorAll('nav .nav-btn').forEach(btn => btn.classList.remove('active'));
-      document.getElementById('games-tab').style.display = 'none';
-      document.getElementById('videos-tab').style.display = 'none';
-      document.getElementById('shorts-tab').style.display = 'none';
-      if(evt && evt.currentTarget) evt.currentTarget.classList.add('active');
-      document.getElementById(tab + '-tab').style.display = 'block';
-    };
-
-    window.handleSearch = function() {
-      searchQuery = document.getElementById('search-input').value.toLowerCase().trim();
-      renderAll();
-    };
-
-    function renderAll() {
-      const filterItem = item => !searchQuery || item.title.toLowerCase().includes(searchQuery);
-
-      ['games', 'videos', 'shorts'].forEach(typeKey => {
-        const container = document.getElementById(typeKey + '-container');
-        const emptyState = document.getElementById(typeKey + '-empty');
-        container.innerHTML = '';
-        const list = itemsStore.filter(i => (typeKey === 'games' ? i.type === 'game' : typeKey === 'videos' ? i.type === 'video' : i.type === 'short') && filterItem(i));
-
-        if(list.length === 0) {
-          emptyState.style.display = 'block';
-        } else {
-          emptyState.style.display = 'none';
-          list.forEach((item) => {
-            const isOwner = currentUser && currentUser.uid === item.ownerId;
-            const deleteBtnHtml = isOwner ? `<button class="delete-item-btn" onclick="deleteCloudItem('${item.id}', '${item.ownerId}', event)">✕</button>` : '';
-
-            if(typeKey === 'shorts') {
-              const el = document.createElement('div');
-              el.className = 'short-item';
-              el.innerHTML = `${deleteBtnHtml}<video src="${item.url}" controls loop playsinline preload="metadata"></video><div class="short-info"><h3>${escapeHtml(item.title)}</h3><p style="font-size:0.75rem; color:#ccc;">Von ${escapeHtml(item.ownerEmail || 'User')}</p></div>`;
-              container.appendChild(el);
-            } else {
-              const thumbHtml = item.thumb ? `<img src="${item.thumb}" alt="Thumb">` : (typeKey === 'games' ? '🎮' : '📹');
-              container.innerHTML += `<div class="card" onclick="openItem('${item.title}', '${item.url}', '${typeKey === 'games' ? 'iframe' : 'video'}')">${deleteBtnHtml}<div class="card-thumb">${thumbHtml}</div><div class="card-info"><div class="card-title">${escapeHtml(item.title)}</div><div class="card-author">Von ${escapeHtml(item.ownerEmail || 'User')}</div></div></div>`;
-            }
-          });
-        }
-      });
-    }
-
-    window.openItem = function(title, url, tagType) {
-      document.getElementById('modal-title').innerText = title;
-      const modalBody = document.getElementById('modal-body');
-      modalBody.innerHTML = tagType === 'iframe' ? `<iframe id="player-frame" src="${url}" allowfullscreen></iframe>` : `<video id="player-frame" src="${url}" controls autoplay playsinline></video>`;
-      document.getElementById('player-modal').classList.add('active');
-    };
-
-    window.closePlayerModal = function() {
-      document.getElementById('player-modal').classList.remove('active');
-      document.getElementById('modal-body').innerHTML = '';
-    };
-
-    window.toggleFullscreen = function() {
-      const elem = document.getElementById('player-frame');
-      if (elem) {
-        if (elem.requestFullscreen) elem.requestFullscreen();
-        else if (elem.webkitRequestFullscreen) elem.webkitRequestFullscreen();
-      }
-    };
-
-    function escapeHtml(text) {
-      return text ? text.replace(/[&<>"']/g, function(m) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m]; }) : '';
-    }
-
-    renderAll();
-  </script>
-</body>
-</html>
+      if
