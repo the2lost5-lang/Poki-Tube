@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Poki-Tube Hub</title>
-  <!-- Firebase SDKs (Einheitliche Version 9.22.1 für Kompatibilität) -->
+  <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
@@ -24,32 +24,32 @@
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
     body { background: linear-gradient(135deg, var(--bg-gradient-start), var(--bg-gradient-end)); color: var(--text-main); min-height: 100vh; display: flex; flex-direction: column; overflow-x: hidden; }
     
-    header { background-color: rgba(15, 23, 42, 0.95); backdrop-filter: blur(10px); padding: 0.6rem 1rem; display: flex; flex-direction: column; position: sticky; top: 0; z-index: 100; border-bottom: 2px solid rgba(255, 255, 255, 0.1); gap: 0.6rem; }
-    .header-top { display: flex; justify-content: space-between; align-items: center; width: 100%; gap: 0.5rem; }
-    .logo { font-size: 1.2rem; font-weight: 800; color: #fff; display: flex; align-items: center; gap: 0.3rem; white-space: nowrap; }
+    header { background-color: rgba(15, 23, 42, 0.95); backdrop-filter: blur(10px); padding: 0.6rem; display: flex; flex-direction: column; position: sticky; top: 0; z-index: 100; border-bottom: 2px solid rgba(255, 255, 255, 0.1); gap: 0.5rem; }
+    .header-top { display: flex; justify-content: space-between; align-items: center; width: 100%; gap: 0.3rem; flex-wrap: wrap; }
+    .logo { font-size: 1.1rem; font-weight: 800; color: #fff; display: flex; align-items: center; gap: 0.3rem; }
     .logo span { color: var(--accent); }
-    .header-actions { display: flex; gap: 0.4rem; align-items: center; }
-    .btn { font-weight: 700; border: none; padding: 0.45rem 0.9rem; border-radius: 16px; cursor: pointer; font-size: 0.85rem; transition: background 0.2s ease; white-space: nowrap; }
+    .header-actions { display: flex; gap: 0.3rem; align-items: center; flex-wrap: wrap; }
+    .btn { font-weight: 700; border: none; padding: 0.4rem 0.7rem; border-radius: 14px; cursor: pointer; font-size: 0.8rem; transition: background 0.2s ease; white-space: nowrap; }
     .upload-btn { background-color: var(--accent); color: #000; }
     .upload-btn:hover { background-color: var(--accent-hover); }
     .auth-btn { background-color: rgba(255, 255, 255, 0.15); color: #fff; }
     .google-btn { background-color: #ffffff; color: #000; display: flex; align-items: center; justify-content: center; gap: 0.5rem; width: 100%; margin-top: 0.8rem; font-weight: 600; }
     .google-btn:hover { background-color: #f1f5f9; }
-    .user-badge { font-size: 0.8rem; color: var(--accent); background: rgba(0, 230, 118, 0.15); padding: 0.3rem 0.6rem; border-radius: 12px; max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .user-badge { font-size: 0.75rem; color: var(--accent); background: rgba(0, 230, 118, 0.15); padding: 0.25rem 0.5rem; border-radius: 10px; max-width: 100px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     
-    .header-bottom { display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; width: 100%; overflow: hidden; }
+    .header-bottom { display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; width: 100%; }
     
     nav { 
       display: flex; 
       background: rgba(0, 0, 0, 0.25); 
-      padding: 4px; 
-      border-radius: 20px; 
-      gap: 6px; 
+      padding: 3px; 
+      border-radius: 18px; 
+      gap: 4px; 
       overflow-x: auto; 
       white-space: nowrap; 
       scrollbar-width: none; 
       -webkit-overflow-scrolling: touch; 
-      max-width: 60%;
+      flex: 1;
     }
     nav::-webkit-scrollbar { display: none; }
     
@@ -57,10 +57,10 @@
       background: transparent; 
       border: none; 
       color: var(--text-muted); 
-      font-size: 0.85rem; 
+      font-size: 0.8rem; 
       font-weight: 600; 
-      padding: 0.4rem 0.8rem; 
-      border-radius: 16px; 
+      padding: 0.35rem 0.7rem; 
+      border-radius: 14px; 
       cursor: pointer; 
       transition: all 0.2s ease; 
       display: inline-flex; 
@@ -71,8 +71,8 @@
     .nav-btn.active { color: #000; background-color: var(--accent); font-weight: bold; }
     .nav-btn:hover:not(.active) { color: #fff; background-color: rgba(255, 255, 255, 0.15); }
 
-    .search-box { display: flex; align-items: center; background: #0f172a; border: 1px solid var(--border-color); border-radius: 16px; padding: 0.35rem 0.6rem; flex: 1; min-width: 100px; }
-    .search-box input { background: transparent; border: none; color: #fff; width: 100%; outline: none; font-size: 0.85rem; padding-left: 0.3rem; }
+    .search-box { display: flex; align-items: center; background: #0f172a; border: 1px solid var(--border-color); border-radius: 14px; padding: 0.3rem 0.5rem; width: 110px; }
+    .search-box input { background: transparent; border: none; color: #fff; width: 100%; outline: none; font-size: 0.8rem; padding-left: 0.2rem; }
     
     main { flex: 1; padding: 1rem; max-width: 1200px; margin: 0 auto; width: 100%; }
     .section-title { font-size: 1.4rem; margin-bottom: 1rem; }
@@ -139,7 +139,7 @@
   <main>
     <div class="firebase-setup-banner">
       <h4>🔐 Community Hub</h4>
-      <p>Melde dich mit Google an und teile deine eigenen Spiele & Videodateien!</p>
+      <p>Melde dich mit Google an und teile deine eigenen HTML5-Spiele & Videodateien!</p>
     </div>
 
     <section id="games-tab">
@@ -230,7 +230,7 @@
         <div class="form-group">
           <label>Kategorie</label>
           <select id="upload-type" onchange="toggleUploadInputs()">
-            <option value="game">HTML5 Spiel (Web-Link)</option>
+            <option value="game">HTML5 Spiel (HTML-Datei)</option>
             <option value="video">Normales Video (Datei)</option>
             <option value="short">Short Video (Datei)</option>
           </select>
@@ -240,11 +240,13 @@
           <input type="text" id="upload-title" required placeholder="Titel eingeben...">
         </div>
         
-        <div class="form-group" id="url-group">
-          <label>Spiel-Link / URL</label>
-          <input type="url" id="upload-url" placeholder="https://...">
+        <!-- Datei-Feld für HTML-Spiele -->
+        <div class="form-group" id="game-file-group">
+          <label>HTML-Spieledatei auswählen (.html)</label>
+          <input type="file" id="upload-game-file" accept=".html,text/html">
         </div>
 
+        <!-- Datei-Feld für Videos & Shorts -->
         <div class="form-group" id="file-group" style="display:none;">
           <label>Videodatei auswählen</label>
           <input type="file" id="upload-file" accept="video/*">
@@ -261,7 +263,6 @@
   </div>
 
   <script>
-    // Firebase Konfiguration & Initialisierung (Kompatibilitäts-Modus)
     const firebaseConfig = {
       apiKey: "AIzaSyCTVB07-t2HeokS88BFFbc_FZ4y0Z2cKOs",
       authDomain: "poki-tube.firebaseapp.com",
@@ -272,7 +273,6 @@
       measurementId: "G-FJFE75X4SR"
     };
 
-    // Firebase starten
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
     const auth = firebase.auth();
@@ -282,7 +282,6 @@
     let itemsStore = [];
     let searchQuery = "";
 
-    // Auth Status überwachen
     auth.onAuthStateChanged((user) => {
       currentUser = user;
       updateUserUI();
@@ -357,20 +356,18 @@
     
     window.toggleUploadInputs = function() {
       const type = document.getElementById('upload-type').value;
-      const urlGroup = document.getElementById('url-group');
+      const gameFileGroup = document.getElementById('game-file-group');
       const fileGroup = document.getElementById('file-group');
       const thumbGroup = document.getElementById('thumb-group');
 
       if (type === 'game') {
-        urlGroup.style.display = 'block';
+        gameFileGroup.style.display = 'block';
         fileGroup.style.display = 'none';
         thumbGroup.style.display = 'block';
-        document.getElementById('upload-url').required = true;
       } else {
-        urlGroup.style.display = 'none';
+        gameFileGroup.style.display = 'none';
         fileGroup.style.display = 'block';
         thumbGroup.style.display = 'none';
-        document.getElementById('upload-url').required = false;
       }
     };
 
@@ -380,18 +377,27 @@
       const type = document.getElementById('upload-type').value;
       const title = document.getElementById('upload-title').value;
       const thumb = document.getElementById('upload-thumb').value;
-      let url = "";
 
       if (type === 'game') {
-        url = document.getElementById('upload-url').value;
-        saveItemToFirestore(title, type, url, thumb || null);
+        const gameFileInput = document.getElementById('upload-game-file');
+        if (gameFileInput.files && gameFileInput.files[0]) {
+          const file = gameFileInput.files[0];
+          const reader = new FileReader();
+          reader.onload = function(uploadEvent) {
+            const url = uploadEvent.target.result; // HTML-Inhalt als Data-URL
+            saveItemToFirestore(title, type, url, thumb || null);
+          };
+          reader.readAsDataURL(file);
+        } else {
+          alert("Bitte wähle eine HTML-Spieledatei aus!");
+        }
       } else {
         const fileInput = document.getElementById('upload-file');
         if (fileInput.files && fileInput.files[0]) {
           const file = fileInput.files[0];
           const reader = new FileReader();
           reader.onload = function(uploadEvent) {
-            url = uploadEvent.target.result;
+            const url = uploadEvent.target.result;
             saveItemToFirestore(title, type, url, null);
           };
           reader.readAsDataURL(file);
@@ -416,6 +422,7 @@
         await db.collection('community_items').add(newItem);
         closeUploadModal();
         document.getElementById('upload-form').reset();
+        toggleUploadInputs();
       } catch (err) {
         alert("Fehler beim Speichern: " + err.message);
       }
@@ -491,7 +498,7 @@
     window.openItem = function(title, url, tagType) {
       document.getElementById('modal-title').innerText = title;
       const modalBody = document.getElementById('modal-body');
-      modalBody.innerHTML = tagType === 'iframe' ? `<iframe id="player-frame" src="${url}" allowfullscreen></iframe>` : `<video id="player-frame" src="${url}" controls autoplay playsinline></video>`;
+      modalBody.innerHTML = tagType === 'iframe' ? `<iframe id="player-frame" src="${url}" sandbox="allow-scripts allow-same-origin"></iframe>` : `<video id="player-frame" src="${url}" controls autoplay playsinline></video>`;
       document.getElementById('player-modal').classList.add('active');
     };
 
